@@ -2,15 +2,13 @@
 
 Use these approved page patterns to avoid weak generic layouts.
 
-If the user provides a sample deck, inherit the closest pattern from that deck first.
-
 ## 1. Chapter Directory Page
 
 Use for:
 - every chapter transition
 
 Approved variants:
-- Deep blue sidebar directory
+- Standard blue sidebar directory
 - Light geometric directory
 - Soft pill / progress directory
 

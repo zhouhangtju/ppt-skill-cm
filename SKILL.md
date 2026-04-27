@@ -1,6 +1,6 @@
-﻿---
+---
 name: pptx-cm
-description: Use this skill when the user wants a PowerPoint or .pptx deck in China Mobile's preferred technical-research reporting style, especially for technology research, model analysis, competitive analysis, progress reports, markdown-to-ppt workflows, or any PPTX read/edit/create task that should follow China Mobile's structure, page patterns, reference-deck style inheritance, and strict visual QA rules.
+description: "Use this skill when the user wants a PowerPoint or .pptx deck in China Mobile's preferred technical-research reporting style, especially for technology research, model analysis, competitive analysis, progress reports, markdown-to-ppt workflows, or any PPTX read/edit/create task that should follow China Mobile's structure, page patterns, reference-deck style inheritance, and strict visual QA rules."
 ---
 
 # pptx-cm
@@ -145,19 +145,14 @@ For technical research decks, prefer this chapter order unless the source strong
 When generating Chapter 6 "应用与落地" for a technical-research deck:
 - use user-provided source material as the factual base
 - additionally apply the commercialization / value-realization reference in [references/application-commercialization-method.md](references/application-commercialization-method.md)
+- first analyze the current methodological framework, judgment dimensions, and organizing logic in that method file
+- then combine that methodology with the user's application / landing source material to determine how this chapter should be structured
 - use the method reference to organize and judge facts, not to invent facts
 - do not treat this chapter as a simple list of industries or scenarios
-- for each major application scenario, try to identify:
-  - target customer or user
-  - business pain point
-  - technical entry point
-  - customer value or measurable benefit
-  - commercialization path or adoption path
-  - competitive substitute or current baseline
-  - landing conditions / dependencies / risks
-  - maturity or current stage
-- if the source does not support a field, mark it as `[待补充]`
-- if the source contains only thin application hints and does not support a full commercialization reading, do not force a full structure; output an application-direction judgment and mark unsupported parts as `[待补充]`
+- first decide whether the chapter is best organized around cases, scenarios, value chains, landing paths, risks, or maturity
+- prioritize method-driven chapter judgment and page-level narrative logic rather than a fixed field template
+- if the source contains only thin application hints and does not support a full commercialization reading, do not force one checklist structure to be filled out; output an application-direction judgment and mark unsupported parts as `[待补充]`
+- if the methodology calls for information that the source does not support, mark it as `[待补充]`
 - do not fabricate customer benefits, rollout maturity, competitive position, pilot results, or commercialization outcomes from the method reference alone
 
 This rule applies only to Chapter 6 and must not change the generation logic of other chapters by default.
@@ -180,6 +175,7 @@ Read [references/page-patterns.md](references/page-patterns.md) when:
 
 Read [references/application-commercialization-method.md](references/application-commercialization-method.md) when:
 - generating Chapter 6 "应用与落地"
+- extracting the current methodological framework, judgment dimensions, and organizing logic
 - deciding how to convert application facts into value-realization logic
 - deciding whether the page should emphasize value, path, constraint, or maturity
 - avoiding shallow industry-listing pages
