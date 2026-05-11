@@ -1,0 +1,5 @@
+interface:
+  display_name: "PPTX CM"
+  short_description: "China Mobile style PPTX deck creation and editing"
+  brand_color: "#005BAC"
+  default_prompt: "Use $pptx-cm to create or revise a China Mobile style technical reporting deck."
