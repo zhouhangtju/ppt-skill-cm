@@ -1,224 +1,146 @@
-# Design Template
+# 设计模板
 
-This file captures Tanzhiyao's preferred visual and content template for technical research PPTs.
+本文件定义 `pptx-cm` 的共享视觉基线。除非用户提供了更强的参考演示文稿，否则以这里为默认标准。
 
-## Global Design Baseline
+它只回答“看起来应该怎样”，不回答“步骤先后怎样走”，也不负责具体报告类型的章节逻辑。
 
-### Style Positioning
+## 全局设计基线
 
-- tone: enterprise / policy / research reporting
-- feel: formal, conclusion-oriented, information-dense
-- canvas: 16:9 widescreen
-- visual language: blue-white dominant, red emphasis, hard borders, restrained decoration
-- benchmark style: closer to Tanzhiyao's mature research decks than to generic consulting minimalism
+### 风格定位
 
-### Style Inheritance Rule
+默认风格应体现：
 
-If the user provides an existing deck, slide screenshot, or named reference deck:
-- infer the current deck's page language first
-- preserve its chapter-page design, title composition, card style, conclusion-box style, and density level
-- use this file as a fallback baseline only
+- 中国移动内部汇报语境
+- 中文研究 / 建设 / 进展类报告气质
+- 蓝白主色、少量红色强调
+- 信息密度较高，但结构清晰
+- 更重结论与判断，而不是大面积装饰
 
-This means:
-- a mature handwritten evidence page should stay evidence-heavy
-- a clean modular template page should stay clean and modular
-- do not flatten either one into generic white boxes
+### 风格继承规则
 
-### Color Rules
+如果用户提供了现有演示文稿、页面截图或明确点名的参考稿：
 
-| Usage | Color |
-|---|---|
-| Title blue | `#1E88D8` |
-| Light border blue | `#B9D7F0` |
-| Body black | `#111111` |
-| Emphasis red | `#E53935` |
-| Structure green | `#7CB342` |
-| Light green | `#CFE8A9` |
-| Current-page green dot | `#9BD24A` |
-| Footer aqua | `#DDF5F4` |
+1. 先继承用户风格
+2. 再用本模板补齐缺失部分
+3. 不要因为“更安全”而弱化用户既有风格
 
-Rules:
-- blue sets structure and titles
-- red marks key numbers, breakthroughs, risks, rises/falls, decisive words
-- green differentiates technical stack / hardware / process structure where useful
+这意味着：
 
-### Typography
+- 不要主动把复杂但成熟的页面压成简单白底蓝框
+- 不要轻易重写标题区、结论框语法与页面密度
+- 只有在参考稿没有覆盖到的地方，才回退到本模板默认值
 
-- Chinese: `Microsoft YaHei`
-- English / numbers: `Arial` or consistent fallback
+### 配色规则
 
-Recommended sizes:
-- page title: 22-26 pt by default; use 28 pt only when the title is short
-- lead sentence: 12-16 pt depending on density
-- module title: 14-18 pt, blue or black, bold
-- module body: 9-14 pt depending on module area and slide density
-- chart text: 9-12 pt
-- footer / source note: 8-9 pt
+默认配色：
 
-Observed preference from Tanzhiyao's own sample decks:
-- `Microsoft YaHei` dominates
-- many body areas use `9 / 12 / 14 pt`
-- titles are visually strong but not excessively large
-- pages often carry multiple modules with compact spacing
+- 主标题蓝：`#1E88D8`
+- 深辅助蓝：`#1565C0`
+- 浅辅助蓝：`#EAF4FB`
+- 正文深灰：`#1F2937`
+- 次级灰：`#6B7280`
+- 分隔线浅灰：`#D1D5DB`
+- 强调红：`#D32F2F`
 
-### Top Area Structure
+规则：
 
-Each slide should generally have:
-- left: large page title
-- middle / under-title: one-sentence takeaway or guide sentence
-- right: optional logo / identifier area
+- 蓝色承担主体系与章节导向
+- 红色只用于关键数字、风险、突破、增减变化
+- 不要引入无来源的紫色、荧光色或过饱和渐变
+- 章节目录侧边栏在无用户覆盖时保持标准蓝系统
 
-Important:
-- Do not let long titles crush the lead sentence
-- If a title is long, shrink it before sacrificing layout clarity
-- The lead sentence should never visually collide with the title
+### 字体
 
-## Recommended Overall Chapter Logic
+中文默认字体：
 
-Technical research decks should usually answer:
-- what is it
-- why now
-- how it works
-- how strong it is
-- how it compares
-- where it lands
-- what should be done next
+- 标题：`Microsoft YaHei`
+- 正文：`Microsoft YaHei`
+- 图表中文：`Microsoft YaHei`
+- 章节目录页中文：`Microsoft YaHei`
 
-Default chapter set:
-1. 概述与简介
-2. 背景与发展
-3. 原理与架构
-4. 能力特点分析
-5. 竞争力分析
-6. 应用与落地
-7. 总结与建议
+字号要求：
 
-## Directory-Style Chapter Page
+- 大标题：22-24
+- 二级标题：18-22
+- 正文：12-14
+- 辅助说明：12-14
+- 图表标注：9-11
 
-Every chapter begins with one directory-style chapter page.
+从中国移动样稿中观察到的偏好：
 
-Use one of these approved chapter-page directions:
+- 标题通常不夸张放大
+- 正文倾向高密度呈现，而不是大字号稀疏排版
+- 层级更多依赖位置、粗细、色块和模块结构，而不是极端字号差异
 
-### Variant A: Deep blue sidebar directory
+### 顶部结构
 
-Best for:
-- formal research decks
-- high contrast structure
-- clear chapter navigation
+每一页通常应包含：
 
-Required traits:
-- left dark panel
-- large Chinese chapter marker + English support word
-- right full chapter list
-- current chapter in blue highlight with strong border
-- non-current chapters in gray
+- 清晰的标题区域
+- 与标题语义匹配的副标题 / 标签 / 期别信息（如需要）
+- 能够稳定对齐正文模块的上边界
 
-### Variant B: Light research directory with geometric device
+注意：
 
-Best for:
-- lighter decks
-- softer consulting-report feel
-- user-provided sample pages similar to Manus-style layouts
+- 标题区不要忽大忽小
+- 顶部线、色条、角标或编号的语法要保持一致
+- 如果参考稿已有成熟标题区，不要随意改写
 
-Required traits:
-- left light visual zone or geometric device
-- right chapter list with softened separators
-- current chapter highlighted by a pale blue rounded box or band
+## 强布局预期
 
-### Variant C: Soft pill / progress directory
+优先：
 
-Best for:
-- more decorative but still enterprise-safe decks
-- when user-provided samples use pill stacks or rounded chapter chips
+- 有明确主视觉中心
+- 有清晰阅读路径
+- 一页只承载一个核心判断
+- 用模块化结构压缩高密度内容
+- 使用能复用的页面范式，而不是临时拼版
 
-Required traits:
-- obvious directory visual center on the left
-- stacked pill-like chapter items on the right
-- current item emphasized by shadow, color, or strong contrast
+避免：
 
-## Common Single-Slide Layout Modes
+- 大片空白但信息很少
+- 一页塞满段落而没有模块结构
+- 单纯几个白盒子平均分布
+- 标题和正文像 Word 文档搬运
+- 图、表、结论彼此断裂
 
-| Mode | Best for | Traits |
-|---|---|---|
-| 标题页 | cover / opening | title + subtitle + author / org / date |
-| 左文右图 | concept + diagram | 3-5 bullets on left, visual on right |
-| 上图下文 | process explanation | visual first, explanation below |
-| 双栏对比 | comparison | left/right split with strong contrast |
-| 对比表格 | multi-dimensional comparison | table with highlighted advantages |
-| 时间线图 | development history | horizontal or vertical milestones |
-| 多格卡片 | multiple points / cases | card matrix with title + description |
-| 核心数据展示 | key figures | large numbers + short labels |
-| 数据图表页 | quantitative analysis | chart-dominant slide + short conclusion |
-| 章节页 / 目录页 | chapter transition | visual separation + navigation |
+## 内容表达规则
 
-## Strong Layout Expectations
+### 标题风格
 
-Prefer:
-- one conclusion per slide
-- one visual center
-- three to six logical modules when content is rich
-- one complete logic chain from title to evidence to takeaway
-- compact spacing that supports dense reporting
-- page-level devices such as observation bars, judgment boxes, quote strips, and card matrices when the content supports them
+优先使用以下之一：
 
-Avoid:
-- giant titles that wrap into the lead sentence area
-- giant body text that reduces slide capacity
-- over-reliance on empty whitespace
-- emphasis that exists only in wording but not in color or typographic contrast
-- pages that are just several equally weighted white boxes without a stronger narrative device
+- 结论型标题
+- 判断型标题
+- 问题到答案型标题
 
-## Content Expression Rules
+### 要点项规则
 
-### Title styles
+- 能短则短
+- 每个要点项尽量只表达一个点
+- 若存在结论与证据，优先把结论前置
+- 一组要点项中保持语法平行
 
-Prefer one of:
-- conclusion title
-- question title
-- number-driven title
+### 强调规则
 
-### Bullet rules
+以下内容必须有明显强调：
 
-- each point should ideally be “mini-title + explanation”
-- key figures should be bold and red
-- footnotes / data sources go in small text at the bottom
+- 关键数字
+- 风险与阻塞
+- 结论与判断
+- 竞争优势
+- 节点性里程碑
 
-### Emphasis rules
+推荐的强调手法：
 
-Use visible emphasis for:
-- key numbers
-- gains / losses / percentages
-- conclusion verbs
-- risk words
-- benchmark outcomes
+- 红色数字
+- 深色结论框
+- 观察条
+- 粗体关键词
+- 图表边上的总结标签
 
-Recommended emphasis treatments:
-- red bold inline number
-- red mini-label chip
-- red phrase inside lead sentence
-- contrasting quote or sidebar box
-- red "judgment / observation / takeaway" strip when the slide needs a strong page-level verdict
+## 页脚 / 导航
 
-### Tone
-
-- technically precise
-- data-supported
-- consulting-style framing
-- action-oriented in conclusion / recommendation sections
-
-## Footer / Navigation
-
-- top-right chapter number may be used
-- bottom-right page dots may be used for navigation
-- optional 3pt footer decorative line in `#DDF5F4`
-
-## Layout Heuristics From Sample Decks
-
-Prefer these practical heuristics:
-- default to more compact text than a typical AI-generated deck
-- for research pages, use 2-column or 3-column evidence layouts aggressively
-- allow a lead paragraph plus multiple evidence modules on the same slide
-- use callout cards and quote blocks to break monotony
-- when content is complex, a denser clear slide is better than an oversized sparse slide
-- when a page is case-based or application-based, prefer observation bar + matrix cards + page judgment
-- when a page is architecture-based, prefer central evolution / flow / structure device plus 2-4 explanation modules
+- 页码、项目名、日期、部门等辅助信息要统一
+- 页脚存在时，避免喧宾夺主
+- 导航元素的色彩和位置要稳定

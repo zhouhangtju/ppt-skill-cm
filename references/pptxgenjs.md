@@ -1,8 +1,10 @@
-# PptxGenJS Tutorial
+# PptxGenJS 参考
 
-## Setup & Basic Structure
+本文件只负责 `pptx-cm` 中最常用、最容易踩坑的 `PptxGenJS` 用法。代码示例保持原样，解释统一使用中文。
 
-```javascript
+## 初始化与基本结构
+
+```js
 const pptxgen = require("pptxgenjs");
 
 let pres = new pptxgen();
@@ -16,466 +18,237 @@ slide.addText("Hello World!", { x: 0.5, y: 0.5, fontSize: 36, color: "363636" })
 pres.writeFile({ fileName: "Presentation.pptx" });
 ```
 
-## Layout Dimensions
+## 页面尺寸
 
-Slide dimensions (coordinates in inches):
-- `LAYOUT_16x9`: 10" × 5.625" (default)
-- `LAYOUT_16x10`: 10" × 6.25"
-- `LAYOUT_4x3`: 10" × 7.5"
-- `LAYOUT_WIDE`: 13.3" × 7.5"
+坐标单位是英寸。开始写页面前，先固定版式尺寸，避免中途换算漂移。
 
 ---
 
-## Text & Formatting
+## 文本与格式
 
-```javascript
-// Basic text
+常见文本写法：
+
+```js
 slide.addText("Simple Text", {
   x: 1, y: 1, w: 8, h: 2, fontSize: 24, fontFace: "Arial",
   color: "363636", bold: true, align: "center", valign: "middle"
 });
+```
 
-// Character spacing (use charSpacing, not letterSpacing which is silently ignored)
+字符间距：
+
+```js
 slide.addText("SPACED TEXT", { x: 1, y: 1, w: 8, h: 1, charSpacing: 6 });
-
-// Rich text arrays
-slide.addText([
-  { text: "Bold ", options: { bold: true } },
-  { text: "Italic ", options: { italic: true } }
-], { x: 1, y: 3, w: 8, h: 1 });
-
-// Multi-line text (requires breakLine: true)
-slide.addText([
-  { text: "Line 1", options: { breakLine: true } },
-  { text: "Line 2", options: { breakLine: true } },
-  { text: "Line 3" }  // Last item doesn't need breakLine
-], { x: 0.5, y: 0.5, w: 8, h: 2 });
-
-// Text box margin (internal padding)
-slide.addText("Title", {
-  x: 0.5, y: 0.3, w: 9, h: 0.6,
-  margin: 0  // Use 0 when aligning text with other elements like shapes or icons
-});
 ```
 
-**Tip:** Text boxes have internal margin by default. Set `margin: 0` when you need text to align precisely with shapes, lines, or icons at the same x-position.
+注意：
+
+- 标题区对齐要求高时，`margin: 0` 很有用
+- 中文演示文稿中应显式设置 `Microsoft YaHei`，并在导出后复核是否真的生效
 
 ---
 
-## Lists & Bullets
+## 列表与要点项
 
-```javascript
-// ✅ CORRECT: Multiple bullets
-slide.addText([
-  { text: "First item", options: { bullet: true, breakLine: true } },
-  { text: "Second item", options: { bullet: true, breakLine: true } },
-  { text: "Third item", options: { bullet: true } }
-], { x: 0.5, y: 0.5, w: 8, h: 3 });
+优先使用数组形式清晰控制要点项。
 
-// ❌ WRONG: Never use unicode bullets
-slide.addText("• First item", { ... });  // Creates double bullets
+不要写成这种容易产生双重要点符号的形式：
 
-// Sub-items and numbered lists
-{ text: "Sub-item", options: { bullet: true, indentLevel: 1 } }
-{ text: "First", options: { bullet: { type: "number" }, breakLine: true } }
+```js
+slide.addText("- First item", { ... });  // Creates double bullets
 ```
 
 ---
 
-## Table Compatibility Notes
+## 表格兼容性说明
 
-PowerPoint compatibility is stricter than unzip/XML validation. A `.pptx` can look structurally fine and still fail to open in PowerPoint because of specific `PptxGenJS` table options.
+### 安全默认值
 
-### Safe Default
+加表格时建议先从最保守配置开始，再逐步加样式：
 
-When adding tables, start with:
-- table content
-- `x/y/w`
-- optional `colW` and `rowH`
-- border and fill only if needed
+- 边框简单
+- 字体简单
+- 对齐简单
+- 不做复杂全局样式
 
-Then open the result in PowerPoint before adding more styling.
+先在 PowerPoint 里打开结果，再逐渐增加美化。
 
-### Known Bad Pattern
+### 已知高风险写法
 
-Avoid table-level:
+避免在表格级别使用：
 
-```javascript
+```js
 slide.addTable(rows, {
   x: 0.6, y: 1.0, w: 12.0,
   valign: "mid"
 });
 ```
 
-In local testing for `tzy-pptx`, `valign: "mid"` on a table produced a file that:
-- unzipped normally
-- had XML that parsed normally
-- but PowerPoint rejected as corrupted/unreadable
+在 `pptx-cm` 本地测试里，表格级 `valign: "mid"` 可能出现：
 
-### High-Risk Table Style Combination
+- zip 可以正常解开
+- XML 看起来也正常
+- 但 PowerPoint 无法正常打开
 
-If a table slide breaks PowerPoint openability, remove global table text styling first, especially this combination:
+### 高风险表格样式组合
 
-```javascript
-{
-  fontFace: "Microsoft YaHei",
-  fontSize: 10,
-  color: "1B2A3A"
-}
-```
+如果把以下项大量打包到表格级样式里，风险会升高：
 
-This combination, especially when bundled with other table-wide options, can trigger compatibility failures in some locally generated decks.
+- `fontFace: "Microsoft YaHei"`
+- `fontSize`
+- `color`
 
-### Preferred Recovery Sequence
+### 优先恢复顺序
 
-If a generated deck fails to open and a table slide is suspected:
+如果怀疑生成的演示文稿因表格页打不开：
 
-1. Remove table-level `valign`
-2. Remove table-level `fontFace` / `fontSize` / `color`
-3. Keep only content, geometry, `colW`, `rowH`, border, and fill
-4. Regenerate
-5. Re-open in PowerPoint
-6. Only then reintroduce styling incrementally if still needed
+1. 先移除表格级 `valign`
+2. 再移除 bundled text-style 选项
+3. 再回退到更简单的边框和填充
+4. 重新生成并在 PowerPoint 中复验
 
-### Practical Rule
+### 实操规则
 
-Prefer cell-level header emphasis and conservative border/fill styling over broad table-wide text styling when using `PptxGenJS` for production PPTX output.
+表格能保守就保守；先求兼容，再求精致。
 
 ---
 
-## Shapes
+## 形状
 
-```javascript
-slide.addShape(pres.shapes.RECTANGLE, {
-  x: 0.5, y: 0.8, w: 1.5, h: 3.0,
-  fill: { color: "FF0000" }, line: { color: "000000", width: 2 }
-});
+矩形、线条、圆角矩形等形状都可作为模块化页面的骨架。`pptx-cm` 中更推荐用它们搭出稳定结构，而不是依赖复杂阴影或特效。
 
-slide.addShape(pres.shapes.OVAL, { x: 4, y: 1, w: 2, h: 2, fill: { color: "0000FF" } });
+阴影可以用，但要克制：
 
-slide.addShape(pres.shapes.LINE, {
-  x: 1, y: 3, w: 5, h: 0, line: { color: "FF0000", width: 3, dashType: "dash" }
-});
-
-// With transparency
-slide.addShape(pres.shapes.RECTANGLE, {
-  x: 1, y: 1, w: 3, h: 2,
-  fill: { color: "0088CC", transparency: 50 }
-});
-
-// Rounded rectangle (rectRadius only works with ROUNDED_RECTANGLE, not RECTANGLE)
-// ⚠️ Don't pair with rectangular accent overlays — they won't cover rounded corners. Use RECTANGLE instead.
-slide.addShape(pres.shapes.ROUNDED_RECTANGLE, {
-  x: 1, y: 1, w: 3, h: 2,
-  fill: { color: "FFFFFF" }, rectRadius: 0.1
-});
-
-// With shadow
-slide.addShape(pres.shapes.RECTANGLE, {
-  x: 1, y: 1, w: 3, h: 2,
-  fill: { color: "FFFFFF" },
-  shadow: { type: "outer", color: "000000", blur: 6, offset: 2, angle: 135, opacity: 0.15 }
-});
-```
-
-Shadow options:
-
-| Property | Type | Range | Notes |
-|----------|------|-------|-------|
-| `type` | string | `"outer"`, `"inner"` | |
-| `color` | string | 6-char hex (e.g. `"000000"`) | No `#` prefix, no 8-char hex — see Common Pitfalls |
-| `blur` | number | 0-100 pt | |
-| `offset` | number | 0-200 pt | **Must be non-negative** — negative values corrupt the file |
-| `angle` | number | 0-359 degrees | Direction the shadow falls (135 = bottom-right, 270 = upward) |
-| `opacity` | number | 0.0-1.0 | Use this for transparency, never encode in color string |
-
-To cast a shadow upward (e.g. on a footer bar), use `angle: 270` with a positive offset — do **not** use a negative offset.
-
-**Note**: Gradient fills are not natively supported. Use a gradient image as a background instead.
+- 轻
+- 少
+- 不喧宾夺主
 
 ---
 
-## Images
+## 图片
 
-### Image Sources
+### 图片来源
 
-```javascript
-// From file path
-slide.addImage({ path: "images/chart.png", x: 1, y: 1, w: 5, h: 3 });
+- 本地路径
+- base64
+- 远程路径（如环境允许）
 
-// From URL
-slide.addImage({ path: "https://example.com/image.jpg", x: 1, y: 1, w: 5, h: 3 });
+### 图片选项
 
-// From base64 (faster, no file I/O)
-slide.addImage({ data: "image/png;base64,iVBORw0KGgo...", x: 1, y: 1, w: 5, h: 3 });
-```
+常见参数包括：
 
-### Image Options
+- `rotate`
+- `rounding`
+- `transparency`
+- `flipH`
+- `flipV`
+- `altText`
+- `hyperlink`
 
-```javascript
-slide.addImage({
-  path: "image.png",
-  x: 1, y: 1, w: 5, h: 3,
-  rotate: 45,              // 0-359 degrees
-  rounding: true,          // Circular crop
-  transparency: 50,        // 0-100
-  flipH: true,             // Horizontal flip
-  flipV: false,            // Vertical flip
-  altText: "Description",  // Accessibility
-  hyperlink: { url: "https://example.com" }
-});
-```
+### 图片尺寸模式
 
-### Image Sizing Modes
+放图时优先守住比例，不要为了填满框而暴力拉伸。
 
-```javascript
-// Contain - fit inside, preserve ratio
-{ sizing: { type: 'contain', w: 4, h: 3 } }
+### 计算尺寸
 
-// Cover - fill area, preserve ratio (may crop)
-{ sizing: { type: 'cover', w: 4, h: 3 } }
+当需要按比例缩放时，先算长宽，再决定居中或贴边。
 
-// Crop - cut specific portion
-{ sizing: { type: 'crop', x: 0.5, y: 0.5, w: 2, h: 2 } }
-```
+### 支持格式
 
-### Calculate Dimensions (preserve aspect ratio)
-
-```javascript
-const origWidth = 1978, origHeight = 923, maxHeight = 3.0;
-const calcWidth = maxHeight * (origWidth / origHeight);
-const centerX = (10 - calcWidth) / 2;
-
-slide.addImage({ path: "image.png", x: centerX, y: 1.2, w: calcWidth, h: maxHeight });
-```
-
-### Supported Formats
-
-- **Standard**: PNG, JPG, GIF (animated GIFs work in Microsoft 365)
-- **SVG**: Works in modern PowerPoint/Microsoft 365
+实际使用前，优先选择稳定、清晰、兼容的图片格式。
 
 ---
 
-## Icons
+## 图标
 
-Use react-icons to generate SVG icons, then rasterize to PNG for universal compatibility.
+如果要在 Node 环境里动态渲染图标，可用 `react-icons + react + react-dom + sharp` 路线。
 
-### Setup
+适合：
 
-```javascript
-const React = require("react");
-const ReactDOMServer = require("react-dom/server");
-const sharp = require("sharp");
-const { FaCheckCircle, FaChartLine } = require("react-icons/fa");
+- 小型能力图标
+- 状态标记
+- 指标页中的辅助视觉符号
 
-function renderIconSvg(IconComponent, color = "#000000", size = 256) {
-  return ReactDOMServer.renderToStaticMarkup(
-    React.createElement(IconComponent, { color, size: String(size) })
-  );
-}
+不适合：
 
-async function iconToBase64Png(IconComponent, color, size = 256) {
-  const svg = renderIconSvg(IconComponent, color, size);
-  const pngBuffer = await sharp(Buffer.from(svg)).png().toBuffer();
-  return "image/png;base64," + pngBuffer.toString("base64");
-}
-```
+- 替代主要图表
+- 把整页做成大量装饰图标堆砌
 
-### Add Icon to Slide
+## 页面背景
 
-```javascript
-const iconData = await iconToBase64Png(FaCheckCircle, "#4472C4", 256);
+可以使用：
 
-slide.addImage({
-  data: iconData,
-  x: 1, y: 1, w: 0.5, h: 0.5  // Size in inches
-});
-```
+- 纯色背景
+- 半透明背景
+- 背景图
+- base64 背景图
 
-**Note**: Use size 256 or higher for crisp icons. The size parameter controls the rasterization resolution, not the display size on the slide (which is set by `w` and `h` in inches).
-
-### Icon Libraries
-
-Install: `npm install -g react-icons react react-dom sharp`
-
-Popular icon sets in react-icons:
-- `react-icons/fa` - Font Awesome
-- `react-icons/md` - Material Design
-- `react-icons/hi` - Heroicons
-- `react-icons/bi` - Bootstrap Icons
+但在中国移动风格里，背景通常应保持克制，不要为了“高级感”牺牲信息可读性。
 
 ---
 
-## Slide Backgrounds
+## 表格
 
-```javascript
-// Solid color
-slide.background = { color: "F1F1F1" };
+表格适合：
 
-// Color with transparency
-slide.background = { color: "FF3399", transparency: 50 };
+- 精确数字
+- 多属性对比
+- 投资 / 决策 / 资源类信息
 
-// Image from URL
-slide.background = { path: "https://example.com/bg.jpg" };
+不适合：
 
-// Image from base64
-slide.background = { data: "image/png;base64,iVBORw0KGgo..." };
-```
+- 把原本应做成卡片或流程图的内容硬塞进表格
 
 ---
 
-## Tables
+## 图表
 
-```javascript
-slide.addTable([
-  ["Header 1", "Header 2"],
-  ["Cell 1", "Cell 2"]
-], {
-  x: 1, y: 1, w: 8, h: 2,
-  border: { pt: 1, color: "999999" }, fill: { color: "F1F1F1" }
-});
+基础类型：
 
-// Advanced with merged cells
-let tableData = [
-  [{ text: "Header", options: { fill: { color: "6699CC" }, color: "FFFFFF", bold: true } }, "Cell"],
-  [{ text: "Merged", options: { colspan: 2 } }]
-];
-slide.addTable(tableData, { x: 1, y: 3.5, w: 8, colW: [4, 4] });
-```
+- 柱状图
+- 折线图
+- 饼图
 
----
+更好看的图表并不只靠默认配置。建议：
 
-## Charts
+- 用更干净的配色
+- 弱化多余边框
+- 减轻网格线
+- 给关键数值更清晰的标签
+- 图表边上补一条判断，而不是只放图
 
-```javascript
-// Bar chart
-slide.addChart(pres.charts.BAR, [{
-  name: "Sales", labels: ["Q1", "Q2", "Q3", "Q4"], values: [4500, 5500, 6200, 7100]
-}], {
-  x: 0.5, y: 0.6, w: 6, h: 3, barDir: 'col',
-  showTitle: true, title: 'Quarterly Sales'
-});
-
-// Line chart
-slide.addChart(pres.charts.LINE, [{
-  name: "Temp", labels: ["Jan", "Feb", "Mar"], values: [32, 35, 42]
-}], { x: 0.5, y: 4, w: 6, h: 3, lineSize: 3, lineSmooth: true });
-
-// Pie chart
-slide.addChart(pres.charts.PIE, [{
-  name: "Share", labels: ["A", "B", "Other"], values: [35, 45, 20]
-}], { x: 7, y: 1, w: 5, h: 4, showPercent: true });
-```
-
-### Better-Looking Charts
-
-Default charts look dated. Apply these options for a modern, clean appearance:
-
-```javascript
-slide.addChart(pres.charts.BAR, chartData, {
-  x: 0.5, y: 1, w: 9, h: 4, barDir: "col",
-
-  // Custom colors (match your presentation palette)
-  chartColors: ["0D9488", "14B8A6", "5EEAD4"],
-
-  // Clean background
-  chartArea: { fill: { color: "FFFFFF" }, roundedCorners: true },
-
-  // Muted axis labels
-  catAxisLabelColor: "64748B",
-  valAxisLabelColor: "64748B",
-
-  // Subtle grid (value axis only)
-  valGridLine: { color: "E2E8F0", size: 0.5 },
-  catGridLine: { style: "none" },
-
-  // Data labels on bars
-  showValue: true,
-  dataLabelPosition: "outEnd",
-  dataLabelColor: "1E293B",
-
-  // Hide legend for single series
-  showLegend: false,
-});
-```
-
-**Key styling options:**
-- `chartColors: [...]` - hex colors for series/segments
-- `chartArea: { fill, border, roundedCorners }` - chart background
-- `catGridLine/valGridLine: { color, style, size }` - grid lines (`style: "none"` to hide)
-- `lineSmooth: true` - curved lines (line charts)
-- `legendPos: "r"` - legend position: "b", "t", "l", "r", "tr"
+默认图表通常偏旧，需要主动做“现代化清理”。
 
 ---
 
-## Slide Masters
+## Slide Master（幻灯片母版）
 
-```javascript
-pres.defineSlideMaster({
-  title: 'TITLE_SLIDE', background: { color: '283A5E' },
-  objects: [{
-    placeholder: { options: { name: 'title', type: 'title', x: 1, y: 2, w: 8, h: 2 } }
-  }]
-});
+如果页面样式高度重复，可以考虑定义 `Slide Master（幻灯片母版）`。
 
-let titleSlide = pres.addSlide({ masterName: "TITLE_SLIDE" });
-titleSlide.addText("My Title", { placeholder: "title" });
-```
+适合：
+
+- 统一标题页
+- 统一章节页
+- 大批量格式一致的内容页
+
+但如果任务强调“贴参考稿微调”，不要过早抽象成过重的母版。
 
 ---
 
-## Common Pitfalls
+## 常见坑
 
-⚠️ These issues cause file corruption, visual bugs, or broken output. Avoid them.
-
-1. **NEVER use "#" with hex colors** - causes file corruption
-   ```javascript
-   color: "FF0000"      // ✅ CORRECT
-   color: "#FF0000"     // ❌ WRONG
-   ```
-
-2. **NEVER encode opacity in hex color strings** - 8-char colors (e.g., `"00000020"`) corrupt the file. Use the `opacity` property instead.
-   ```javascript
-   shadow: { type: "outer", blur: 6, offset: 2, color: "00000020" }          // ❌ CORRUPTS FILE
-   shadow: { type: "outer", blur: 6, offset: 2, color: "000000", opacity: 0.12 }  // ✅ CORRECT
-   ```
-
-3. **Use `bullet: true`** - NEVER unicode symbols like "•" (creates double bullets)
-
-4. **Use `breakLine: true`** between array items or text runs together
-
-5. **Avoid `lineSpacing` with bullets** - causes excessive gaps; use `paraSpaceAfter` instead
-
-6. **Each presentation needs fresh instance** - don't reuse `pptxgen()` objects
-
-7. **NEVER reuse option objects across calls** - PptxGenJS mutates objects in-place (e.g. converting shadow values to EMU). Sharing one object between multiple calls corrupts the second shape.
-   ```javascript
-   const shadow = { type: "outer", blur: 6, offset: 2, color: "000000", opacity: 0.15 };
-   slide.addShape(pres.shapes.RECTANGLE, { shadow, ... });  // ❌ second call gets already-converted values
-   slide.addShape(pres.shapes.RECTANGLE, { shadow, ... });
-
-   const makeShadow = () => ({ type: "outer", blur: 6, offset: 2, color: "000000", opacity: 0.15 });
-   slide.addShape(pres.shapes.RECTANGLE, { shadow: makeShadow(), ... });  // ✅ fresh object each time
-   slide.addShape(pres.shapes.RECTANGLE, { shadow: makeShadow(), ... });
-   ```
-
-8. **Don't use `ROUNDED_RECTANGLE` with accent borders** - rectangular overlay bars won't cover rounded corners. Use `RECTANGLE` instead.
-   ```javascript
-   // ❌ WRONG: Accent bar doesn't cover rounded corners
-   slide.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 1, y: 1, w: 3, h: 1.5, fill: { color: "FFFFFF" } });
-   slide.addShape(pres.shapes.RECTANGLE, { x: 1, y: 1, w: 0.08, h: 1.5, fill: { color: "0891B2" } });
-
-   // ✅ CORRECT: Use RECTANGLE for clean alignment
-   slide.addShape(pres.shapes.RECTANGLE, { x: 1, y: 1, w: 3, h: 1.5, fill: { color: "FFFFFF" } });
-   slide.addShape(pres.shapes.RECTANGLE, { x: 1, y: 1, w: 0.08, h: 1.5, fill: { color: "0891B2" } });
-   ```
+1. 颜色值不要写 `#FF0000` 这种形式，按库要求写纯十六进制字符串。
+2. 阴影对象复用不当时，容易出现意外副作用。
+3. 中文字体声明了，不代表最终导出就真的保留了。
+4. 页面坐标如果前后体系不一致，很容易出现越做越偏的问题。
+5. 表格是 `pptx-cm` 里最需要优先怀疑兼容性的区域。
 
 ---
 
-## Quick Reference
+## 快速参考
 
-- **Shapes**: RECTANGLE, OVAL, LINE, ROUNDED_RECTANGLE
-- **Charts**: BAR, LINE, PIE, DOUGHNUT, SCATTER, BUBBLE, RADAR
-- **Layouts**: LAYOUT_16x9 (10"×5.625"), LAYOUT_16x10, LAYOUT_4x3, LAYOUT_WIDE
-- **Alignment**: "left", "center", "right"
-- **Chart data labels**: "outEnd", "inEnd", "center"
+- 先定版式尺寸
+- 先搭结构，再填内容
+- 先保兼容，再加样式
+- 先让 PowerPoint 能打开，再谈精细美化
+- 最终一定做渲染 QA

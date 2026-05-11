@@ -1,4 +1,4 @@
-"""
+﻿"""
 Helper for running LibreOffice (soffice) in environments where AF_UNIX
 sockets may be blocked (e.g., sandboxed VMs).  Detects the restriction
 at runtime and applies an LD_PRELOAD shim if needed.
@@ -6,15 +6,16 @@ at runtime and applies an LD_PRELOAD shim if needed.
 Usage:
     from office.soffice import run_soffice, get_soffice_env
 
-    # Option 1 – run soffice directly
+    # Option 1 鈥?run soffice directly
     result = run_soffice(["--headless", "--convert-to", "pdf", "input.docx"])
 
-    # Option 2 – get env dict for your own subprocess calls
+    # Option 2 鈥?get env dict for your own subprocess calls
     env = get_soffice_env()
     subprocess.run(["soffice", ...], env=env)
 """
 
 import os
+import shutil
 import socket
 import subprocess
 import tempfile
@@ -34,7 +35,8 @@ def get_soffice_env() -> dict:
 
 def run_soffice(args: list[str], **kwargs) -> subprocess.CompletedProcess:
     env = get_soffice_env()
-    return subprocess.run(["soffice"] + args, env=env, **kwargs)
+    soffice_bin = _resolve_soffice_binary()
+    return subprocess.run([str(soffice_bin)] + args, env=env, **kwargs)
 
 
 
@@ -42,12 +44,53 @@ _SHIM_SO = Path(tempfile.gettempdir()) / "lo_socket_shim.so"
 
 
 def _needs_shim() -> bool:
+    if os.name != "posix":
+        return False
+    if not hasattr(socket, "AF_UNIX"):
+        return False
     try:
         s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         s.close()
         return False
     except OSError:
         return True
+
+
+def _resolve_soffice_binary() -> Path:
+    configured = os.environ.get("SOFFICE_BIN")
+    if configured:
+        candidate = Path(configured).expanduser()
+        if candidate.exists():
+            return candidate
+
+    found = shutil.which("soffice")
+    if found:
+        return Path(found)
+
+    if os.name == "nt":
+        win_candidates = [
+            Path(r"C:\Program Files\LibreOffice\program\soffice.exe"),
+            Path(r"C:\Program Files (x86)\LibreOffice\program\soffice.exe"),
+            Path.home() / "AppData" / "Local" / "Programs" / "LibreOffice" / "program" / "soffice.exe",
+        ]
+        for candidate in win_candidates:
+            if candidate.exists():
+                return candidate
+
+    raise FileNotFoundError(_missing_soffice_message())
+
+
+def _missing_soffice_message() -> str:
+    if os.name == "nt":
+        return (
+            "LibreOffice soffice.exe was not found. Install LibreOffice, add "
+            "its program directory to PATH, or set SOFFICE_BIN to the full "
+            "path of soffice.exe."
+        )
+    return (
+        "LibreOffice soffice was not found. Install LibreOffice, add it to "
+        "PATH, or set SOFFICE_BIN to the full path of the soffice binary."
+    )
 
 
 def _ensure_shim() -> Path:
@@ -110,7 +153,7 @@ int socket(int domain, int type, int protocol) {
     if (domain == AF_UNIX) {
         int fd = real_socket(domain, type, protocol);
         if (fd >= 0) return fd;
-        /* socket(AF_UNIX) blocked – fall back to socketpair(). */
+        /* socket(AF_UNIX) blocked 鈥?fall back to socketpair(). */
         int sv[2];
         if (real_socketpair(domain, type, protocol, sv) == 0) {
             if (sv[0] >= 0 && sv[0] < 1024) {
@@ -169,7 +212,7 @@ int close(int fd) {
         if (peer_of[fd] >= 0) { real_close(peer_of[fd]); peer_of[fd] = -1; }
 
         if (was_listener)
-            _exit(0);                        /* conversion done – exit */
+            _exit(0);                        /* conversion done 鈥?exit */
     }
     return real_close(fd);
 }
@@ -181,3 +224,4 @@ if __name__ == "__main__":
     import sys
     result = run_soffice(sys.argv[1:])
     sys.exit(result.returncode)
+

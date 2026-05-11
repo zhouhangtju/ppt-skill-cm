@@ -1,205 +1,143 @@
-# Editing Presentations
+# PPTX 编辑说明
 
-## Template-Based Workflow
+## 基于模板的工作流
 
-When using an existing presentation as a template:
+当你要把一份现有演示文稿当作模板来改时：
 
-1. **Analyze existing slides**:
+1. 先快速理解模板结构与视觉语法
    ```bash
    python scripts/thumbnail.py template.pptx
    python -m markitdown template.pptx
    ```
-   Review `thumbnails.jpg` to see layouts, and markitdown output to see placeholder text.
-
-2. **Plan slide mapping**: For each content section, choose a template slide.
-
-   ⚠️ **USE VARIED LAYOUTS** — monotonous presentations are a common failure mode. Don't default to basic title + bullet slides. Actively seek out:
-   - Multi-column layouts (2-column, 3-column)
-   - Image + text combinations
-   - Full-bleed images with text overlay
-   - Quote or callout slides
-   - Section dividers
-   - Stat/number callouts
-   - Icon grids or icon + text rows
-
-   **Avoid:** Repeating the same text-heavy layout for every slide.
-
-   Match content type to layout style (e.g., key points → bullet slide, team info → multi-column, testimonials → quote slide).
-
-3. **Unpack**: `python scripts/office/unpack.py template.pptx unpacked/`
-
-4. **Build presentation** (do this yourself, not with subagents):
-   - Delete unwanted slides (remove from `<p:sldIdLst>`)
-   - Duplicate slides you want to reuse (`add_slide.py`)
-   - Reorder slides in `<p:sldIdLst>`
-   - **Complete all structural changes before step 5**
-
-5. **Edit content**: Update text in each `slide{N}.xml`.
-   **Use subagents here if available** — slides are separate XML files, so subagents can edit in parallel.
-
-6. **Clean**: `python scripts/clean.py unpacked/`
-
-7. **Pack**: `python scripts/office/pack.py unpacked/ output.pptx --original template.pptx`
+2. 再决定是沿用页面、复制页面，还是复制版式后重填内容
+3. 尽量在不破坏原有关系链的前提下修改
 
 ---
 
-## Scripts
+## 脚本
 
-| Script | Purpose |
-|--------|---------|
-| `unpack.py` | Extract and pretty-print PPTX |
-| `add_slide.py` | Duplicate slide or create from layout |
-| `clean.py` | Remove orphaned files |
-| `pack.py` | Repack with validation |
-| `thumbnail.py` | Create visual grid of slides |
-
-### unpack.py
+### `unpack.py`
 
 ```bash
 python scripts/office/unpack.py input.pptx unpacked/
 ```
 
-Extracts PPTX, pretty-prints XML, escapes smart quotes.
+作用：
 
-### add_slide.py
+- 解包 PPTX
+- 格式化 XML，便于阅读
+- 处理智能引号等常见字符问题
+
+### `add_slide.py`
 
 ```bash
-python scripts/add_slide.py unpacked/ slide2.xml      # Duplicate slide
-python scripts/add_slide.py unpacked/ slideLayout2.xml # From layout
+python scripts/add_slide.py unpacked/ slide2.xml       # 复制现有页面
+python scripts/add_slide.py unpacked/ slideLayout2.xml # 从布局版式创建
 ```
 
-Prints `<p:sldId>` to add to `<p:sldIdLst>` at desired position.
+作用：
 
-### clean.py
+- 输出需要添加到 `<p:sldIdLst>` 中的 `<p:sldId>`
+- 便于在指定位置插入新页
+
+### `clean.py`
 
 ```bash
 python scripts/clean.py unpacked/
 ```
 
-Removes slides not in `<p:sldIdLst>`, unreferenced media, orphaned rels.
+作用：
 
-### pack.py
+- 删除不在 `<p:sldIdLst>` 中的页面
+- 清理未引用媒体
+- 清理孤立 rels
+
+### `pack.py`
 
 ```bash
 python scripts/office/pack.py unpacked/ output.pptx --original input.pptx
 ```
 
-Validates, repairs, condenses XML, re-encodes smart quotes.
+作用：
 
-### thumbnail.py
+- 校验
+- 尝试修复
+- 压缩 XML
+- 重新编码智能引号等字符
+
+### `thumbnail.py`
 
 ```bash
 python scripts/thumbnail.py input.pptx [output_prefix] [--cols N]
 ```
 
-Creates `thumbnails.jpg` with slide filenames as labels. Default 3 columns, max 12 per grid.
+作用：
 
-**Use for template analysis only** (choosing layouts). For visual QA, use `soffice` + `pdftoppm` to create full-resolution individual slide images—see SKILL.md.
-
----
-
-## Slide Operations
-
-Slide order is in `ppt/presentation.xml` → `<p:sldIdLst>`.
-
-**Reorder**: Rearrange `<p:sldId>` elements.
-
-**Delete**: Remove `<p:sldId>`, then run `clean.py`.
-
-**Add**: Use `add_slide.py`. Never manually copy slide files—the script handles notes references, Content_Types.xml, and relationship IDs that manual copying misses.
+- 生成页面缩略图概览
+- 快速判断模板风格、页面密度和章节结构
 
 ---
 
-## Editing Content
+## 页面操作
 
-**Subagents:** If available, use them here (after completing step 4). Each slide is a separate XML file, so subagents can edit in parallel. In your prompt to subagents, include:
-- The slide file path(s) to edit
-- **"Use the Edit tool for all changes"**
-- The formatting rules and common pitfalls below
+页面顺序存放在 `ppt/presentation.xml` 的 `<p:sldIdLst>` 中。
 
-For each slide:
-1. Read the slide's XML
-2. Identify ALL placeholder content—text, images, charts, icons, captions
-3. Replace each placeholder with final content
+修改页面顺序、删除页面、插入复制页时：
 
-**Use the Edit tool, not sed or Python scripts.** The Edit tool forces specificity about what to replace and where, yielding better reliability.
-
-### Formatting Rules
-
-- **Bold all headers, subheadings, and inline labels**: Use `b="1"` on `<a:rPr>`. This includes:
-  - Slide titles
-  - Section headers within a slide
-  - Inline labels like (e.g.: "Status:", "Description:") at the start of a line
-- **Never use unicode bullets (•)**: Use proper list formatting with `<a:buChar>` or `<a:buAutoNum>`
-- **Bullet consistency**: Let bullets inherit from the layout. Only specify `<a:buChar>` or `<a:buNone>`.
+- 先看清 `<p:sldIdLst>`
+- 再核对 `ppt/slides/slideX.xml`
+- 最后检查关联的 `.rels`
 
 ---
 
-## Common Pitfalls
+## 编辑内容
 
-### Template Adaptation
+逐页处理时建议：
 
-When source content has fewer items than the template:
-- **Remove excess elements entirely** (images, shapes, text boxes), don't just clear text
-- Check for orphaned visuals after clearing text content
-- Run visual QA to catch mismatched counts
+1. 先识别标题区、正文区、结论区、图表区
+2. 先替换标题和关键结论
+3. 再处理正文块、图表块和表格块
+4. 最后回看对齐、留白和层级
 
-When replacing text with different length content:
-- **Shorter replacements**: Usually safe
-- **Longer replacements**: May overflow or wrap unexpectedly
-- Test with visual QA after text changes
-- Consider truncating or splitting content to fit the template's design constraints
+### 格式规则
 
-**Template slots ≠ Source items**: If template has 4 team members but source has 3 users, delete the 4th member's entire group (image + text boxes), not just the text.
+- 尽量复用原有文本框，不轻易重建
+- 原模板里已有成熟样式时，优先保留 run 级格式（text run 级格式）
+- 需要新增块时，尽量复制现有相近块后再改
+- 不要随意破坏占位符、关系链和命名结构
 
-### Multi-Item Content
+---
 
-If source has multiple items (numbered lists, multiple sections), create separate `<a:p>` elements for each — **never concatenate into one string**.
+## 常见坑
 
-**❌ WRONG** — all items in one paragraph:
-```xml
-<a:p>
-  <a:r><a:rPr .../><a:t>Step 1: Do the first thing. Step 2: Do the second thing.</a:t></a:r>
-</a:p>
-```
+### 模板适配
 
-**✅ CORRECT** — separate paragraphs with bold headers:
-```xml
-<a:p>
-  <a:pPr algn="l"><a:lnSpc><a:spcPts val="3919"/></a:lnSpc></a:pPr>
-  <a:r><a:rPr lang="en-US" sz="2799" b="1" .../><a:t>Step 1</a:t></a:r>
-</a:p>
-<a:p>
-  <a:pPr algn="l"><a:lnSpc><a:spcPts val="3919"/></a:lnSpc></a:pPr>
-  <a:r><a:rPr lang="en-US" sz="2799" .../><a:t>Do the first thing.</a:t></a:r>
-</a:p>
-<a:p>
-  <a:pPr algn="l"><a:lnSpc><a:spcPts val="3919"/></a:lnSpc></a:pPr>
-  <a:r><a:rPr lang="en-US" sz="2799" b="1" .../><a:t>Step 2</a:t></a:r>
-</a:p>
-<!-- continue pattern -->
-```
+当源内容比模板中的项目更少时：
 
-Copy `<a:pPr>` from the original paragraph to preserve line spacing. Use `b="1"` on headers.
+- 不要留下一串空壳模块
+- 可合并、删除或拉伸，但要保持整体节奏
 
-### Smart Quotes
+当替换文本长度差异很大时：
 
-Handled automatically by unpack/pack. But the Edit tool converts smart quotes to ASCII.
+- 先收缩内容，再考虑扩容
+- 不要第一反应就把字号放很小
 
-**When adding new text with quotes, use XML entities:**
+### 多项目内容
 
-```xml
-<a:t>the &#x201C;Agreement&#x201D;</a:t>
-```
+如果一页中有多组重复结构：
 
-| Character | Name | Unicode | XML Entity |
-|-----------|------|---------|------------|
-| `“` | Left double quote | U+201C | `&#x201C;` |
-| `”` | Right double quote | U+201D | `&#x201D;` |
-| `‘` | Left single quote | U+2018 | `&#x2018;` |
-| `’` | Right single quote | U+2019 | `&#x2019;` |
+- 先找清楚哪几个 shape / group 属于同一模块
+- 批量复制前先确认内部 id / rel 不会冲突
+- 复制后及时清理无用引用
 
-### Other
+### 智能引号
 
-- **Whitespace**: Use `xml:space="preserve"` on `<a:t>` with leading/trailing spaces
-- **XML parsing**: Use `defusedxml.minidom`, not `xml.etree.ElementTree` (corrupts namespaces)
+- 从 Word、网页、PDF 粘过来的内容可能带智能引号
+- 打包前尽量让文本字符正规化
+- 如果 XML 能打开但 PowerPoint 打不开，检查是否存在异常字符
+
+### 其他
+
+- 不要只看 XML 正常就认为文件可用
+- 最终仍以 PowerPoint 或兼容渲染结果为准
+- 任何结构性修改后都应重新打包并检查

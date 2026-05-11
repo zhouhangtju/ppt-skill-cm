@@ -1,237 +1,292 @@
 ---
-name: tzy-pptx
-description: Use this skill when the user wants a PowerPoint or .pptx deck in Tanzhiyao's preferred Chinese technical-research reporting style, especially for technology research, model analysis, competitive analysis, progress reports, markdown-to-ppt workflows, or any PPTX read/edit/create task that should follow Tanzhiyao's structure, page patterns, reference-deck style inheritance, and strict visual QA rules.
+name: pptx-cm
+description: "Use this skill when the user wants a PowerPoint or .pptx deck in China Mobile's preferred reporting style, especially for technical research, project construction, project progress, markdown-to-ppt workflows, or any PPTX read/edit/create task that should follow China Mobile's structure, page patterns, reference-deck style inheritance, and strict visual QA rules."
 ---
 
-# tzy-pptx
+# pptx-cm
 
-Single-entry skill for Tanzhiyao's preferred PPT workflow.
+面向中国移动风格 PPT 工作的单一入口技能。
 
-This skill is the default entry point for Tanzhiyao-style PPT work. It combines:
-- low-level `.pptx` handling routes
-- PPT generation / editing decisions
-- report structure
-- visual design rules
-- page pattern selection
-- chapter directory pages
-- content extraction discipline
-- QA checklist
-- density and typography preferences learned from Tanzhiyao's own deck examples
+触发本技能后，必须先读取本文档，在这里完成任务归类、路径选择和参考文档分流，再按需读取对应文档。
 
-## When To Use
+## 工作流程
 
-Use this skill when the user wants:
-- to create, read, edit, summarize, analyze, or modify a `.pptx`
-- a new PPT from markdown, report text, notes, or outline
-- a Chinese technical research / industry analysis / internal reporting deck
-- a deck matching Tanzhiyao's preferred visual and content style
-- a PPT workflow that should directly use one skill instead of splitting between generic and custom skills
+### 第一步：判定任务形态与报告类型
 
-If the user explicitly asks for `tzy-pptx`, treat it as fully sufficient. Do not require a second skill entry to complete the work.
+先判断请求属于哪一种任务形态：
 
-## Style Priority
+- 读取或总结 PPT 内容
+  - 运行 `python -m markitdown presentation.pptx`
+  - 需要视觉概览时，再用 `scripts/thumbnail.py`
+- 从零创建PPT
+  - 使用 `PptxGenJS`
+  - 同时生成最终 `.pptx` 和可复用源脚本
+- 根据模板编辑或创建
+  - 阅读editing.md文件了解完整详情
+  - 使用 `scripts/` 下自带脚本
 
-Always resolve style in this order:
+如果是从零创建PPT，再判断PPT属于哪一种报告类型：
 
-1. user-provided high-quality deck / screenshots / historical deck pages
-2. deck-specific reference patterns documented in [references/example-signatures.md](references/example-signatures.md)
-3. shared Tanzhiyao defaults in [references/design-template.md](references/design-template.md)
+- `technical_research`
+- `project_construction`
+- `project_progress`
 
-This is a hard rule:
-- if the user provides an existing deck, page screenshots, or named reference deck, inherit that visual language first
-- the skill defaults are a fallback, not a replacement for the user's existing mature style
-- do not "simplify" a provided mature style into a safer but flatter generic blue-white template
+判定优先级如下：
 
-## Quick Route Selection
+1. 用户明确指定
+2. 用户给出的目录或章节命名
+3. 源材料关键词与目标
 
-Choose one route and execute it directly:
+本阶段至少输出：
 
-- Read or summarize PPT content:
-  - `python -m markitdown presentation.pptx`
-  - if needed, generate visual overview with `scripts/thumbnail.py`
+- 一句任务形态判断
+- 一句报告类型判断
+- 一个结构化抽取清单
 
-- Create from scratch:
-  - use `PptxGenJS`
-  - generate a reusable script together with the final `.pptx`
-  - when using `PptxGenJS` tables, prefer conservative table styling and PowerPoint-compatible options first
+### 第二步：搭建演示文稿大纲
 
-- Edit an existing deck or template:
-  - unpack -> edit -> clean -> pack
-  - use the bundled local scripts under `scripts/`
+开始列大纲前：
 
-- Visual QA:
-  - export slide images through local rendering
-  - inspect every slide image, not just spot-checks
-  - inspect for overflow, misalignment, broken hierarchy, weak emphasis, excessive whitespace, clipping, and visual downgrade relative to the intended style
-  - do not consider the deck complete until slide-image review has been finished page by page
+- 读取对应的 `references/report-types/*.md`
 
-## Default Operating Rules
+- 若用户没有给出更强大纲，就沿用其默认章节框架
 
-1. First classify the task:
-- new deck from scratch
-- modify an existing deck
-- fill an existing template
-- add charts/tables/graphics to existing slides
-- bulk-generate pages from structured material
+对每一页，定义：
 
-2. If the deck is generated from existing text, extract:
-- H1/H2/H3 heading structure
-- key figures and percentages
-- technical terms and proper nouns
-- content that should become tables
-- concepts that should become diagrams, timelines, or architecture visuals
+- 标题
+- 页面类型
+- 主要论点
+- 是否需要图表 / 表格 / 图片 / 图示
+- 选定的批准页面模式
 
-3. If the user provides any deck sample, screenshots, or named reference deck, extract a style contract before building pages:
-- chapter page style
-- title area structure
-- body module style
-- preferred accent treatment
-- preferred conclusion / observation / verdict box style
-- page density level
+每章正文前，都插入一页目录式章节页。
 
-4. Build a page outline before making the deck. Each page must include:
-- page title
-- page type / layout mode
-- main talking points
-- required chart / table / image / diagram if any
-- chosen approved page pattern
+目录式章节页规则：
 
-5. Before each chapter's content pages, insert one directory-style chapter page.
-- Show the full chapter list
-- Highlight only the current chapter
-- Keep other chapters visually weakened
-- use a chapter-page variant that matches the user's reference style if one exists
+- 参考page-patterns.md中设计好的章节页模板
+- 若存在参考样张，则优先贴近样张
+- 每章都要有章节页，不是只在开头放一次
 
-6. Never invent missing facts from source material.
-- If a page needs content that is not present, mark it as `[待补充]`
+#### `technical_research` 第 6 章：应用与落地
 
-7. Compress for presentation, not for archival.
-- Prefer one conclusion per slide
-- Prefer 3-6 modules per slide when the content supports it
-- Prefer one visual center per slide
-- Avoid dumping full paragraphs from source documents
-- Prefer dense but readable composition over oversized typography and excessive whitespace
+若报告类型是 `technical_research`，且包含第 6 章“应用与落地”，必须在大纲阶段先确定本章的组织逻辑，而不是等写页时临场拼接。
 
-8. Use approved patterns rather than free-form weak layouts.
-- See [references/page-patterns.md](references/page-patterns.md)
-- if a slide type maps to an approved pattern, use that pattern or a close inherited variant
-- do not replace a strong page type with generic large white boxes unless the source is too weak to support more structure
+首要动作不是假定一张固定清单，而是：
 
-9. Run QA after generation.
-- verify page count and page order
-- verify titles and chapter pages
-- verify there is no obvious overflow or cutoff
-- verify tables/charts render correctly
-- if a generated `.pptx` opens in unzip/xml inspection but fails in PowerPoint, suspect `PptxGenJS` table-option compatibility before assuming the whole deck is broken
-- export slide images and review them page by page
-- fix any overflow, misalignment, spacing, hierarchy, emphasis, empty-layout, or style-regression issues found during image review
-- re-export and re-check every page touched by fixes
-- list unresolved uncertainties honestly
+- 阅读并分析 [application-commercialization-method.zh-CN.md](application-commercialization-method.zh-CN.md)
+- 抽取其方法框架、判断维度和组织逻辑
+- 将该方法与用户的应用 / 落地源材料结合，决定本章如何组织
+- 这一步是强制项，不允许只用源材料直接列第 6 章大纲
 
-## Page Structure Defaults
+继续之前，必须显式形成一份“方法到材料映射”：
 
-For technical research decks, prefer this chapter order unless the source strongly suggests otherwise:
+- 用到了方法文档中的哪些分析视角
+- 哪些源事实支撑这些视角
+- 哪些方法维度没有支撑，必须标记为 `[待补充]`
 
-1. 概述与简介
-2. 背景与发展
-3. 原理与架构
-4. 能力特点分析
-5. 竞争力分析
-6. 应用与落地
-7. 总结与建议
+优先回答：
 
-Read [references/design-template.md](references/design-template.md) when choosing:
-- the chapter framework
-- slide layout modes
-- visual standards
-- content writing rules
+- 本章主要围绕多案例，还是 1-2 个核心场景
+- 本章更该突出价值、路径、风险，还是成熟度
 
-Read [references/workflow.md](references/workflow.md) when:
-- planning the step-by-step execution
-- deciding what to extract from source text
-- deciding what QA is mandatory
+如果源材料足够丰富，优先按案例或场景组织，而不是只写宽泛行业标签。
 
-Read [references/page-patterns.md](references/page-patterns.md) when:
-- selecting specific slide structures
-- avoiding weak generic layouts
-- matching a page type to a proven pattern
+### 第三步：原材料提炼
 
-Read [references/example-signatures.md](references/example-signatures.md) when:
-- the user provides deck references
-- deciding whether to lean toward "handwritten evidence-heavy" or "clean modular template" style
-- translating sample decks into reusable page choices
+大纲确定后，需要提炼源材料中的关键信息并整理成可排版的信息单元。
 
-## Visual Defaults
+标准提炼维度如下：
 
-Use Tanzhiyao's preferred defaults unless the user gives a different style:
-- 16:9 widescreen
-- Chinese research / policy / enterprise reporting tone
-- blue-white dominant palette
-- red only for key numbers, warnings, breakthroughs, gains/losses
-- hard-edged boxes and clear borders
-- minimal decorative shadow
-- high information density but readable spacing
-- medium title size rather than oversized headlines
-- small-to-medium body text with clear hierarchy
-- visible emphasis color in important numbers, judgments, and risks
+- `numbers`：关键数字、比例、增速、规模、成本、排名、里程碑值
+- `comparisons`：主体对比、方案取舍、优劣差异、竞品或案例比较
+- `hierarchies`：分层架构、模块关系、平台层次、能力树状结构
+- `processes`：时间线、实施路径、流程顺序、闭环机制、阶段推进
+- `categories`：能力清单、案例分类、模块分组、职责划分、场景枚举
+- `conclusions`：页级结论、判断句、观察条、建议句、风险结论
+- `evidence`：来源、案例事实、支撑判断的证据模块
+- `missing_info`：当前页面需要但材料暂缺的关键事实
 
-## Output Defaults
+识别要求：
 
-Unless the user requests otherwise:
-- produce a `.pptx`
-- prefer a safe writable path first
-- keep filenames concise and meaningful
-- include a generation script when creating from scratch, if that materially improves future iteration
+- 不要把整段材料原样搬到页面上
+- 一个句子中若同时包含数字、对比和结论，要拆成多个单元
+- 所有关键数字都要保留，不要在结构化过程中丢失
+- 结论句与证据句分开记录，避免页面只有材料没有判断
+- 无法确认的事实统一放入 `missing_info`，后续显式写成 `[待补充]`
 
-## Implementation Routes
+如果源材料以文本为主，还要额外抽取：
 
-Use these low-level routes directly inside this skill:
+- 标题层级：H1 / H2 / H3
+- 技术术语与专有名词
+- 适合表格化的内容
+- 值得图解化的概念：架构、流程、治理、里程碑、实施路径
 
-- From scratch:
-  - use `PptxGenJS`
-  - if layout is custom, keep the script's coordinate system and page size consistent
-  - prefer generating both the deck and the source script for iteration
-  - for `PptxGenJS` tables, avoid aggressive global table styling unless already validated in PowerPoint
-  - specifically avoid table-level `valign: "mid"` in generated tables; it can produce a `.pptx` that unzips cleanly but PowerPoint cannot open
-  - if a table slide fails to open in PowerPoint, first remove table-level `valign` and bundled text-style options such as `fontFace` + `fontSize` + `color`, then regenerate and retest
+本阶段至少输出一份结构化识别清单，建议包含：
 
-- Existing deck / template editing:
-  - `python scripts/office/unpack.py input.pptx unpacked`
-  - edit XML or duplicate slide structures as needed
-  - `python scripts/clean.py unpacked`
-  - `python scripts/office/pack.py unpacked output.pptx --original input.pptx`
+- `numbers`
+- `comparisons`
+- `hierarchies`
+- `processes`
+- `categories`
+- `conclusions`
+- `evidence`
+- `missing_info`
 
-- Content reading / analysis:
-  - `python -m markitdown input.pptx`
-  - when needed, use `thumbnail.py` or unpacked XML for deeper inspection
+### 第四步：选择页面布局并填充页面内容
 
-- Visual QA:
-  - image export or equivalent local rendering is mandatory for generated or materially edited decks
-  - review exported slide images page by page; spot-checking alone is not sufficient
-  - re-check any page touched by fixes before declaring success
-  - do not declare completion before the page-by-page image review is done
+这一阶段同时完成两件事：
 
-## Bundled Resource Use
+1. 结合提炼后的材料选择合理的页面范式
+2. 按所选范式将内容落成具体页面
 
-This skill may directly use the mature scripts and references already available under:
+选择顺序如下：
+
+1. 将提炼后的信息结构化
+2. 读取 [design-template.md](design-template.md) 默认规则并作为必须遵守的基本约束
+3. 读取 [page-patterns.md](page-patterns.md) 并结合结构化的信息选择合适的页面布局范式
+4. 读取 `report-types/*.md` 微调判断语气、模块重点和章节偏好
+
+结构化规则：
+
+- `numbers` 结构化方式：大数字 + 单位 + 对比 + 颜色强调
+- `comparisons` 结构化方式：表格/并列卡片
+- `hierarchies`   结构化方式：架构图/树形图
+- `processes` 结构化方式：步骤流程，箭头连接 + 步骤节点
+- `categories` 结构化方式：标签云/特性网格
+- `conclusions` 结构化方式：观察条、判断条、结论侧栏、建议收口区
+- `evidence` 结构化方式：支撑模块、案例卡片、来源拼接区
+- `missing_info` 不要伪造，显式写为 `[待补充]`
+
+通用构建规则：
+
+- 一页只承载一个核心判断
+- 标题、模块区、结论区语法保持稳定
+- 正文以模块化要点为主，不要退化成段落堆砌
+- 图表只承担它擅长表达的内容
+- 表格优先承载精确数字和多属性对比
+- 图表或表格旁边尽量有一句判断，不要只放素材
+- 当材料密度很高时，优先拆模块、换范式或分两页，不要只靠缩字解决
+
+#### `technical_research` 第 6 章：应用与落地
+
+- 先总结当前 [application-commercialization-method.zh-CN.md](application-commercialization-method.zh-CN.md) 可用的方法视角
+- 再把该视角应用到源材料上，只抽取真正支撑页面叙事的内容
+- 不允许只凭源材料写这一章；每页或每组页都必须能追溯到明确的方法组织逻辑
+- 如果源材料足够丰富，优先按应用案例、关键场景、价值链或落地路径组织
+- 如果源材料只有高层级提示，就不要强行把某个方法清单填满
+
+此时应：
+
+- 聚焦应用方向、价值聚焦或主落地判断
+- 对缺乏支撑的方法项标记 `[待补充]`
+- 不要伪装成“商业化路径、成熟度、收益已经明确”
+
+### 第五步：执行零空白修正逻辑
+
+完成初稿页面后，必须进行一轮“零空白修正”。
+
+**核心要求**：内容必须在安全区（`content-layer`）内**纵向均匀分布**，不能出现上半部分拥挤、下半部分大片空白的情况。
+
+**检测方法：**
+
+- 页面是否被内容填满 80%+
+- 各卡片高度是否均匀（差异 < 20%）
+- 底部是否有突兀的大片空白？
+- 是否上半部分拥挤、下半部分空白
+- 是否只有图、表、截图，没有判断句收口
+- 是否为了避免溢出把页面做得过空、过弱
+- 是否能通过改 pattern 而不是缩字来改善页面
+
+**动态调整策略：**
+
+当检测到空白时，按优先级执行以下调整：
+
+| 优先级 | 调整策略          | 适用场景           | 操作示例                               |
+| ------ | ----------------- | ------------------ | -------------------------------------- |
+| 1      | **增大内容密度**  | 代码块/列表内容少  | 增加代码行数、展开更多列表项           |
+| 2      | **调整字体大小**  | 文字区域太空       | 标题 16px→18px，正文 12px→13px         |
+| 3      | **调整行距/间距** | 内容紧凑但区域太空 | `padding: 10px→14px`，`gap: 8px→12px`  |
+| 4      | **重新分配区域**  | 左右/上下分布不均  | `flex:1` 改为 `flex:1.2`，或调整百分比 |
+| 5      | **插入辅助元素**  | 纯文字区域单调     | 添加图标（🤖 📊 🔧）、示意图、流程箭头    |
+| 6      | **增加标签/徽章** | 底部空白           | 添加状态标签、指标徽章、分类标签云     |
+
+不要做的事：
+
+- 不要为了填空而编造事实
+- 不要为了“满”而堆砌无意义装饰
+- 不要把成熟参考稿压扁成更平、更弱的白底蓝框页
+- 不要仅靠缩小字号掩盖结构问题
+
+### 第六步：最终 QA
+
+**基本检查项：**
+
+- 输出保存为 `.pptx`
+- 页数与大纲一致
+- 将渲染后的 PDF 转成逐页图片用于检查
+- 每一页渲染图都被逐页检查，而不是抽查
+- 没有截断、裁切或溢出
+- 图表和图片渲染正确
+- 表格对齐正常
+- 标题与样式一致
+- 任何因 QA 修过的页面，都要重新导出并重新检查
+
+**信息完整性：**
+
+- 所有数字指标都被保留并突出显示
+- 对比关系有明确的表格或并列展示
+- 层级结构有可视化呈现（色块/树形）
+
+**结构化程度：**
+
+- 无大段纯文本（banner除外）
+- 所有内容都有明确的视觉容器（卡片/色块/表格）
+- 使用图标辅助理解
+
+**空白控制：**
+
+- 每个卡片flex:1且内容填满
+- 底部有标签/表格填充
+- 无大面积纯色空白
+- **纵向均匀分布**：内容在安全区内均匀分布，不能上半部分拥挤下半部分空白
+- **动态填满**：发现空白时，立即调整字体大小、行距、内容密度或插入图标/图片填充
+
+对 `technical_research` 第 6 章，额外检查：
+
+- 最终页面明确体现了“源材料 + 方法框架”的组合
+- 使用到的每个主要方法维度都有事实支撑
+- 没有支撑的维度显式写成 `[待补充]`
+
+**完成门槛：**
+
+- 如果还没有完成逐页渲染图检查，就不能把演示文稿说成完成
+- 如果渲染图里仍有未解决布局问题，就不能把演示文稿说成完成
+- 如果相对提供的风格参考明显更平、更弱，也不能把演示文稿说成完成
+
+## 不可妥协项
+
+- 对于较完整的演示文稿，不要跳过大纲阶段。
+- 只要内容组织依赖报告类型，就不要跳过报告类型判定。
+- 多章节演示文稿不要跳过章节目录页。
+- 对于新生成或被实质修改的演示文稿，不要跳过逐页渲染图检查。
+- 除非 `soffice.py` 路线不可用或失败，否则不要跳过基于它的视觉渲染 QA。
+- `technical_research` 第 6 章不要跳过显式的方法论到源材料映射。
+- 不要仅凭 zip/XML 检查就宣布 `PptxGenJS` 生成的演示文稿完成。
+- 不要编造缺失的业务事实或基准数字。
+- 不要在不同页面间随机混用视觉语言。
+- 只要能修，就不要放过明显溢出、对齐损坏或风格回退。
+- 当源材料足够支撑更高密度表达时，不要默认使用超大标题、超大正文或视觉上过空的页面。
+- 不要把强参考稿降级成通用保守模板。
+- 只要存在批准过的页面范式，就不要退回到弱的自由布局。
+
+## 自带资源
+
+本技能可直接使用以下打包资源：
+
 - `scripts/`
+- [references/design-template.md](references/design-template.md)
+- [references/page-patterns.md](references/page-patterns.md)
 - [references/pptx-editing.md](references/pptx-editing.md)
 - [references/pptxgenjs.md](references/pptxgenjs.md)
-- [references/page-patterns.md](references/page-patterns.md)
-- [references/example-signatures.md](references/example-signatures.md)
-
-These are bundled implementation resources inside this merged skill, not an external dependency.
-
-## Non-Negotiables
-
-- Do not skip the outline step for substantial decks
-- Do not skip chapter directory pages for multi-chapter decks
-- Do not skip page-by-page exported-image review for generated or materially edited decks
-- Do not declare a `PptxGenJS` deck complete until it has been opened by PowerPoint or rendered successfully through PowerPoint-compatible export, not only by zip/XML inspection
-- Do not fabricate missing business facts or benchmark numbers
-- Do not mix visual languages randomly across slides
-- Do not leave obvious overflow, isolated punctuation, or broken alignment unresolved if you can fix them
-- Do not default to oversized titles or oversized body text
-- Do not create slides that feel empty when the source clearly supports denser information packaging
-- Do not downgrade a strong sample style into a generic safe template
-- Do not use weak free-form layouts when an approved page pattern exists
+- `references/report-types/`
+- [references/application-commercialization-method.md](references/application-commercialization-method.md)
